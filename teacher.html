@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>교사용 실제시험 송출 및 정답 관리 | 배재중학교 생활일본어</title>
+<style>
+:root {
+  --navy: #1A2F8A;
+  --navy2: #122466;
+  --red: #C0392B;
+  --green: #198754;
+  --ink: #171A22;
+  --muted: #637083;
+  --line: #DDE3EF;
+  --bg: #F5F7FB;
+  --card: #FFFFFF;
+  --radius: 20px;
+  --shadow: 0 16px 40px rgba(26, 47, 138, 0.08);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: Pretendard, "Noto Sans KR", system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+}
+.jp { font-family: "Noto Sans JP", "Yu Gothic", Meiryo, sans-serif; }
+.shell { width: min(1080px, calc(100% - 32px)); margin: 0 auto; padding: 24px 0 60px; }
+
+/* Top Header */
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--card);
+  border: 1px solid var(--line);
+  padding: 14px 24px;
+  border-radius: 18px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.03);
+  margin-bottom: 24px;
+}
+.brand { display: flex; align-items: center; gap: 12px; font-weight: 900; color: var(--navy); font-size: 18px; }
+.brand-mark {
+  width: 38px; height: 38px; border-radius: 12px;
+  background: var(--navy); color: #fff;
+  display: grid; place-items: center; font-size: 15px; font-weight: 900;
+}
+.status-pill {
+  padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 800;
+  background: #E8F6EE; color: #187044; border: 1px solid #B8E4C9;
+}
+
+/* Card layout */
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 28px;
+  margin-bottom: 24px;
+}
+h2 { color: var(--navy); margin: 0 0 8px; font-size: 24px; font-weight: 800; }
+p.desc { color: var(--muted); margin: 0 0 20px; font-size: 15px; line-height: 1.6; }
+
+/* Setup Controls */
+.setup-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 24px; }
+@media (max-width: 768px) { .setup-grid { grid-template-columns: 1fr; } }
+
+.field-group { margin-bottom: 18px; }
+.field-label { display: block; font-weight: 800; font-size: 14px; color: #475569; margin-bottom: 8px; }
+.chip-group { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.chip {
+  border: 1px solid var(--line); background: #fff;
+  padding: 8px 16px; border-radius: 12px; font-weight: 800; font-size: 14px;
+  cursor: pointer; transition: all 0.15s;
+}
+.chip:hover { background: #EEF2FA; color: var(--navy); }
+.chip.active { background: var(--navy); color: #fff; border-color: var(--navy); box-shadow: 0 4px 12px rgba(26,47,138,0.25); }
+
+.text-input {
+  width: 100%; border: 1px solid var(--line); border-radius: 12px;
+  padding: 12px 14px; font-size: 15px; font-weight: 700; color: var(--ink);
+}
+.text-input:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 3px rgba(26,47,138,0.1); }
+
+.select-row { display: flex; gap: 12px; }
+.select-row select {
+  flex: 1; border: 1px solid var(--line); border-radius: 12px;
+  padding: 12px 14px; font-size: 14px; font-weight: 800; background: #fff;
+}
+
+/* Action Buttons */
+.btn {
+  border: 0; border-radius: 14px; padding: 14px 22px; font-weight: 900; font-size: 16px;
+  cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  transition: all 0.15s; touch-action: manipulation;
+}
+.btn:active { transform: scale(0.98); }
+.btn-primary { background: var(--navy); color: #fff; box-shadow: 0 8px 20px rgba(26,47,138,0.25); }
+.btn-primary:hover { background: var(--navy2); }
+.btn-secondary { background: #EEF2FA; color: var(--navy); }
+.btn-secondary:hover { background: #E0E7F5; }
+.btn-drive { background: #0F9D58; color: #fff; box-shadow: 0 8px 20px rgba(15,157,88,0.25); }
+.btn-drive:hover { background: #0B8043; }
+.btn-print { background: #334155; color: #fff; }
+.btn-print:hover { background: #1E293B; }
+.btn-danger { background: var(--red); color: #fff; }
+.btn-ghost { background: transparent; border: 1px solid var(--line); color: var(--muted); }
+
+/* Stage (Exam TV Mode) */
+#stageView {
+  display: none;
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: #F8FAFC; z-index: 1000;
+  padding: 24px; flex-direction: column;
+}
+.stage-head {
+  display: flex; justify-content: space-between; align-items: center;
+  background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 14px 24px;
+  margin-bottom: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.03);
+}
+.stage-title { font-size: 22px; font-weight: 900; color: var(--navy); display: flex; align-items: center; gap: 12px; }
+.stage-badges { display: flex; gap: 10px; align-items: center; }
+.badge { padding: 8px 14px; border-radius: 999px; font-size: 14px; font-weight: 900; background: #EEF2FA; color: var(--navy); }
+.badge.timer { min-width: 65px; text-align: center; background: #FFF4E6; color: #B45309; font-size: 18px; }
+.badge.timer.urgent { background: #FDE8E8; color: var(--red); animation: pulse 0.5s infinite alternate; }
+@keyframes pulse { from { transform: scale(1); } to { transform: scale(1.08); } }
+
+.progressbar { height: 10px; background: #E2E8F0; border-radius: 999px; overflow: hidden; margin-bottom: 16px; }
+.progressbar-bar { height: 100%; background: var(--navy); width: 100%; transition: width 1s linear; }
+
+.stage-screen {
+  flex: 1; min-height: 400px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; background: #fff; border: 3px solid var(--navy);
+  border-radius: 28px; box-shadow: 0 20px 60px rgba(26,47,138,0.12);
+  padding: 40px; margin-bottom: 16px;
+}
+.stage-qnum { font-size: 26px; font-weight: 900; color: var(--muted); margin-bottom: 14px; letter-spacing: 0.05em; }
+.stage-prompt {
+  font-size: clamp(56px, 11vw, 110px); font-weight: 950; color: var(--navy);
+  line-height: 1.15; word-break: keep-all; margin: 10px 0;
+}
+.stage-prompt.kr { font-size: clamp(44px, 8vw, 84px); color: #0F172A; }
+.stage-help { font-size: 22px; color: var(--muted); font-weight: 700; margin-top: 24px; }
+
+.stage-controls {
+  display: flex; justify-content: center; gap: 12px;
+  background: #fff; border: 1px solid var(--line); border-radius: 18px;
+  padding: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.03);
+}
+
+/* Result / Answer Sheet View */
+#resultView { display: none; }
+.result-header {
+  display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 2px solid var(--navy); padding-bottom: 16px; margin-bottom: 20px;
+}
+.result-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px; }
+.answer-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+.answer-table th, .answer-table td { border: 1px solid #CBD5E1; padding: 12px 14px; text-align: left; }
+.answer-table th { background: #F1F5F9; color: #334155; font-size: 13px; font-weight: 800; text-align: center; }
+.answer-table td.num { text-align: center; font-weight: 900; width: 45px; color: #64748B; }
+.answer-table td.dir { text-align: center; font-size: 12px; font-weight: 800; width: 90px; color: #0284C7; }
+.answer-table td.q { font-weight: 800; font-size: 17px; color: var(--navy); }
+.answer-table td.a { font-weight: 900; font-size: 17px; color: var(--red); }
+
+.drive-alert {
+  padding: 16px 20px; border-radius: 14px; background: #E8F6EE; color: #187044;
+  border: 1px solid #B8E4C9; font-weight: 800; margin-bottom: 20px; display: none;
+}
+.drive-alert a { color: #0F9D58; font-weight: 900; text-decoration: underline; margin-left: 8px; }
+
+/* Print Mode */
+@media print {
+  body { background: #fff !important; padding: 0 !important; color: #000 !important; }
+  .topbar, .setup-grid, .stage-controls, .result-actions, #stageView, .no-print { display: none !important; }
+  #resultView { display: block !important; padding: 0 !important; }
+  .card { box-shadow: none !important; border: 0 !important; padding: 0 !important; }
+  .answer-table th { background: #EEE !important; -webkit-print-color-adjust: exact; }
+  .answer-table td.a { color: #B91C1C !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="shell no-print">
+  <!-- Top Bar -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">培材</div>
+      <div>생활일본어 수행평가 · 교사용 송출기</div>
+    </div>
+    <div class="status-pill">☁️ 구글 드라이브 자동 저장 연결됨</div>
+  </header>
+
+  <!-- Setup Card -->
+  <div class="card" id="setupCard">
+    <h2>2학기 1차 수행평가 실제시험 송출</h2>
+    <p class="desc">
+      4·5단원 136개 출제단위에서 <b>고유 20문항(1~10 일→한, 11~20 한→일)</b>을 자동 추출합니다.<br>
+      시험이 끝나면 <b>구글 드라이브 지정 폴더로 정답표가 즉시 자동 저장</b>됩니다.
+    </p>
+
+    <div class="setup-grid">
+      <div>
+        <div class="field-group">
+          <label class="field-label">학급 선택 (또는 직접 입력)</label>
+          <div class="chip-group" id="classChips">
+            <button type="button" class="chip active" data-class="2학년 1반">2-1</button>
+            <button type="button" class="chip" data-class="2학년 2반">2-2</button>
+            <button type="button" class="chip" data-class="2학년 3반">2-3</button>
+            <button type="button" class="chip" data-class="2학년 4반">2-4</button>
+            <button type="button" class="chip" data-class="2학년 5반">2-5</button>
+            <button type="button" class="chip" data-class="2학년 6반">2-6</button>
+            <button type="button" class="chip" data-class="2학년 7반">2-7</button>
+          </div>
+          <input type="text" id="customClassInput" class="text-input" value="2학년 1반" placeholder="예: 2학년 3반 (2차시)">
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">회차 메모 (선택사항)</label>
+          <input type="text" id="roundMemoInput" class="text-input" placeholder="예: 3교시 본시험 / 재응시 등">
+        </div>
+      </div>
+
+      <div>
+        <div class="field-group">
+          <label class="field-label">시험 타이머 설정</label>
+          <div class="select-row">
+            <div>
+              <span style="font-size:12px; color:var(--muted); font-weight:700;">시작 전 준비</span>
+              <select id="prepTimeSelect">
+                <option value="3">3초</option>
+                <option value="5" selected>5초 (기본)</option>
+                <option value="10">10초</option>
+              </select>
+            </div>
+            <div>
+              <span style="font-size:12px; color:var(--muted); font-weight:700;">문항당 표시 시간</span>
+              <select id="qTimeSelect">
+                <option value="8">8초</option>
+                <option value="10" selected>10초 (기본)</option>
+                <option value="12">12초</option>
+                <option value="15">15초</option>
+                <option value="20">20초</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 30px;">
+          <button type="button" id="startExamBtn" class="btn btn-primary" style="width: 100%; font-size: 18px; padding: 18px;">
+            🚀 실제시험 시작 (교실 TV 송출)
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Stage View (Exam TV Fullscreen) -->
+<div id="stageView">
+  <div class="stage-head">
+    <div class="stage-title">
+      <span class="brand-mark" style="width:32px; height:32px; font-size:13px;">培材</span>
+      <span id="stageClassBadge">2학년 1반</span>
+      <span style="color:var(--muted); font-size:16px;">생활일본어 수행평가 1</span>
+    </div>
+    <div class="stage-badges">
+      <div id="stageDirBadge" class="badge">준비</div>
+      <div id="stageCounterBadge" class="badge">0 / 20</div>
+      <div id="stageTimerBadge" class="badge timer">5</div>
+    </div>
+  </div>
+
+  <div class="progressbar">
+    <div id="timeProgressBar" class="progressbar-bar"></div>
+  </div>
+
+  <div class="stage-screen">
+    <div id="stageQNum" class="stage-qnum">준비 시간</div>
+    <div id="stagePrompt" class="stage-prompt">준비</div>
+    <div id="stageHelp" class="stage-help">답안지를 준비하세요. 곧 시험이 시작됩니다.</div>
+  </div>
+
+  <div class="stage-controls">
+    <button type="button" id="prevBtn" class="btn btn-secondary">← 이전 문항</button>
+    <button type="button" id="pauseBtn" class="btn btn-primary">일시정지 (Space)</button>
+    <button type="button" id="nextBtn" class="btn btn-secondary">다음 문항 →</button>
+    <button type="button" id="abortBtn" class="btn btn-danger">시험 중단</button>
+  </div>
+</div>
+
+<!-- Result & Archiving View -->
+<div class="shell" id="resultView">
+  <div class="card">
+    <div class="result-header">
+      <div>
+        <h2>2026학년도 2학기 생활일본어 수행평가 1 정답표</h2>
+        <div style="color:var(--muted); font-size:14px; margin-top:4px;">
+          배재중학교 2학년 · 시행일시: <span id="resDate"></span>
+        </div>
+      </div>
+      <div class="badge" id="resClassBadge" style="font-size:18px; padding:8px 16px;">2학년 1반</div>
+    </div>
+
+    <!-- Drive Save Success Alert -->
+    <div id="driveAlert" class="drive-alert">
+      <span>✅ <b>선생님 학교 구글 드라이브에 자동 저장되었습니다!</b></span>
+      <a id="driveFileLink" href="#" target="_blank">📄 드라이브에서 열기</a>
+    </div>
+
+    <!-- Actions -->
+    <div class="result-actions no-print">
+      <button type="button" id="saveDriveBtn" class="btn btn-drive">
+        ☁️ 구글 드라이브에 저장
+      </button>
+      <button type="button" id="downloadHtmlBtn" class="btn btn-secondary">
+        💾 PC에 파일 다운로드
+      </button>
+      <button type="button" id="printResultBtn" class="btn btn-print">
+        🖨️ 정답표 인쇄 / PDF 저장
+      </button>
+      <button type="button" id="newExamBtn" class="btn btn-ghost" style="margin-left:auto;">
+        🔄 다른 반 시험 시작
+      </button>
+    </div>
+
+    <!-- Answer Table -->
+    <table class="answer-table">
+      <thead>
+        <tr>
+          <th>번호</th>
+          <th>출제 방향</th>
+          <th>시험 문제</th>
+          <th>정답</th>
+        </tr>
+      </thead>
+      <tbody id="answerTbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+// 136개 확정 출제단위 (FINAL SSOT v8)
+const UNITS = [
+  {"id":"IU001","jp":"にゅうがくしき","kr":"입학식"},
+  {"id":"IU002","jp":"なんじ","kr":"몇 시"},
+  {"id":"IU003","jp":"ございます","kr":"정중함을 더하는 표현"},
+  {"id":"IU004","jp":"いま","kr":"지금"},
+  {"id":"IU005","jp":"たんじょうび","kr":"생일"},
+  {"id":"IU006","jp":"にゅうがく","kr":"교과서 사진 맥락: 입학"},
+  {"id":"IU007","jp":"これ","kr":"이것"},
+  {"id":"IU008","jp":"ごうかくはっぴょう","kr":"합격 발표"},
+  {"id":"IU009","jp":"そつぎょう","kr":"졸업"},
+  {"id":"IU010","jp":"そつぎょうしき","kr":"졸업식"},
+  {"id":"IU011","jp":"ごうかく","kr":"합격"},
+  {"id":"IU012","jp":"お-","kr":"존경·공손을 나타내는 접두 표현"},
+  {"id":"IU013","jp":"ごじ","kr":"5시"},
+  {"id":"IU014","jp":"じゅういちじ","kr":"11시"},
+  {"id":"IU015","jp":"にじ","kr":"2시"},
+  {"id":"IU016","jp":"はちじ","kr":"8시"},
+  {"id":"IU017","jp":"ろくじ","kr":"6시"},
+  {"id":"IU018","jp":"しちじ","kr":"7시"},
+  {"id":"IU019","jp":"じゅうにじ","kr":"12시"},
+  {"id":"IU020","jp":"よじ","kr":"4시"},
+  {"id":"IU021","jp":"じ","kr":"~시"},
+  {"id":"IU022","jp":"くじ","kr":"9시"},
+  {"id":"IU023","jp":"いちじ","kr":"1시"},
+  {"id":"IU024","jp":"さんじ","kr":"3시"},
+  {"id":"IU025","jp":"じゅうじ","kr":"10시"},
+  {"id":"IU026","jp":"じゅく","kr":"학원"},
+  {"id":"IU027","jp":"ぶかつ","kr":"동아리 활동"},
+  {"id":"IU028","jp":"から","kr":"~부터"},
+  {"id":"IU029","jp":"おさきに","kr":"먼저"},
+  {"id":"IU030","jp":"おみやげ","kr":"선물"},
+  {"id":"IU031","jp":"じゅぎょう","kr":"수업"},
+  {"id":"IU032","jp":"ひるやすみ","kr":"점심시간"},
+  {"id":"IU033","jp":"ケーキ","kr":"케이크"},
+  {"id":"IU034","jp":"しあい","kr":"경기"},
+  {"id":"IU035","jp":"せんぱい","kr":"선배"},
+  {"id":"IU036","jp":"だ","kr":"~이다"},
+  {"id":"IU037","jp":"やった","kr":"해냈어, 야호"},
+  {"id":"IU038","jp":"がんばれ","kr":"힘내"},
+  {"id":"IU039","jp":"すごい","kr":"대단하다"},
+  {"id":"IU040","jp":"あした","kr":"내일"},
+  {"id":"IU041","jp":"おまもり","kr":"오마모리"},
+  {"id":"IU042","jp":"がんばって","kr":"힘내서/힘내"},
+  {"id":"IU043","jp":"おめでとう","kr":"축하해 / 축하"},
+  {"id":"IU044","jp":"おたんじょうび","kr":"생일"},
+  {"id":"IU045","jp":"くん","kr":"~군"},
+  {"id":"IU046","jp":"へ","kr":"~에게 / ~로"},
+  {"id":"IU047","jp":"ゆいちゃん","kr":"유이야 / 유이(친근한 호칭)"},
+  {"id":"IU048","jp":"よろしく","kr":"잘 부탁해 / 잘 부탁합니다"},
+  {"id":"IU049","jp":"これから","kr":"앞으로"},
+  {"id":"IU050","jp":"としょかん","kr":"도서관"},
+  {"id":"IU051","jp":"より","kr":"~로부터"},
+  {"id":"IU052","jp":"ぎんこう","kr":"은행"},
+  {"id":"IU053","jp":"まで","kr":"~까지"},
+  {"id":"IU054","jp":"おくと","kr":"놓아두면"},
+  {"id":"IU055","jp":"かつ","kr":"이기다"},
+  {"id":"IU056","jp":"ごかく","kr":"오각형"},
+  {"id":"IU057","jp":"オクトパス","kr":"문어(옥토퍼스)"},
+  {"id":"IU058","jp":"パス","kr":"패스"},
+  {"id":"IU059","jp":"し","kr":"4의 대체 읽기 / 죽음과 같은 소리"},
+  {"id":"IU060","jp":"はち","kr":"8"},
+  {"id":"IU061","jp":"どうも","kr":"정말"},
+  {"id":"IU062","jp":"です","kr":"~입니다 / ~이에요"},
+  {"id":"IU063","jp":"か","kr":"~까? (의문)"},
+  {"id":"IU064","jp":"ですか","kr":"~입니까? / ~인가요?"},
+  {"id":"IU065","jp":"どうぞ","kr":"~하세요 / 받으세요 / 드세요 등"},
+  {"id":"IU066","jp":"は","kr":"~은/는"},
+  {"id":"IU067","jp":"おちゃ","kr":"차, 녹차"},
+  {"id":"IU068","jp":"ありがとう","kr":"고마워"},
+  {"id":"IU069","jp":"よ","kr":"~야 / ~요 (강조)"},
+  {"id":"IU070","jp":"ください","kr":"~해 주세요"},
+  {"id":"IU071","jp":"の","kr":"~의"},
+  {"id":"IU072","jp":"わあ","kr":"와"},
+  {"id":"IU073","jp":"ちゃん","kr":"-아/야"},
+  {"id":"IU074","jp":"も","kr":"~도"},
+  {"id":"IU075","jp":"カツどん","kr":"돈가스덮밥"},
+  {"id":"IU076","jp":"く","kr":"9의 대체 읽기 / い형용사 활용 요소 -く"},
+  {"id":"IU077","jp":"おいしい","kr":"맛있다"},
+  {"id":"IU078","jp":"する","kr":"하다"},
+  {"id":"IU079","jp":"いただきます","kr":"잘 먹겠습니다"},
+  {"id":"IU080","jp":"さむい","kr":"춥다"},
+  {"id":"IU081","jp":"たかい","kr":"비싸다, (키가) 크다"},
+  {"id":"IU082","jp":"あつい","kr":"덥다"},
+  {"id":"IU083","jp":"やすい","kr":"싸다"},
+  {"id":"IU084","jp":"いつつ","kr":"5개, 다섯"},
+  {"id":"IU085","jp":"よっつ","kr":"4개, 넷"},
+  {"id":"IU086","jp":"ホテル","kr":"호텔"},
+  {"id":"IU087","jp":"ひとつ","kr":"1개, 하나"},
+  {"id":"IU088","jp":"ふたつ","kr":"2개, 둘"},
+  {"id":"IU089","jp":"どう","kr":"어떻게 / 어때"},
+  {"id":"IU090","jp":"この","kr":"이"},
+  {"id":"IU091","jp":"とても","kr":"매우"},
+  {"id":"IU092","jp":"みっつ","kr":"3개, 셋"},
+  {"id":"IU093","jp":"ソウル","kr":"서울"},
+  {"id":"IU094","jp":"さん","kr":"~씨"},
+  {"id":"IU095","jp":"とんカツ","kr":"돈가스"},
+  {"id":"IU096","jp":"はい","kr":"네"},
+  {"id":"IU097","jp":"ジュース","kr":"주스"},
+  {"id":"IU098","jp":"カレー","kr":"카레"},
+  {"id":"IU099","jp":"に","kr":"~로 / ~으로 (선택)"},
+  {"id":"IU100","jp":"と","kr":"~와/과"},
+  {"id":"IU101","jp":"すみません","kr":"저기요, 죄송합니다"},
+  {"id":"IU102","jp":"ね","kr":"~네요 / ~지요"},
+  {"id":"IU103","jp":"ます","kr":"~합니다 (정중 어미)"},
+  {"id":"IU104","jp":"うどん","kr":"우동"},
+  {"id":"IU105","jp":"します","kr":"합니다"},
+  {"id":"IU106","jp":"しますか","kr":"합니까? / 하겠습니까?"},
+  {"id":"IU107","jp":"たべもの","kr":"음식"},
+  {"id":"IU108","jp":"のみもの","kr":"음료"},
+  {"id":"IU109","jp":"コーヒー","kr":"커피"},
+  {"id":"IU110","jp":"コーラ","kr":"콜라"},
+  {"id":"IU111","jp":"ラーメン","kr":"라면"},
+  {"id":"IU112","jp":"うーん","kr":"음"},
+  {"id":"IU113","jp":"ここ","kr":"여기"},
+  {"id":"IU114","jp":"じゃ","kr":"그럼"},
+  {"id":"IU115","jp":"そう","kr":"그래 / 그렇게"},
+  {"id":"IU116","jp":"カレーうどん","kr":"카레 우동"},
+  {"id":"IU117","jp":"うまい","kr":"맛있다"},
+  {"id":"IU118","jp":"ぼく","kr":"나"},
+  {"id":"IU119","jp":"すごく","kr":"아주, 매우"},
+  {"id":"IU120","jp":"が","kr":"~이/가"},
+  {"id":"IU121","jp":"くつ","kr":"신발"},
+  {"id":"IU122","jp":"せ","kr":"키"},
+  {"id":"IU123","jp":"ですね","kr":"~이네요 / ~군요"},
+  {"id":"IU124","jp":"でも","kr":"하지만"},
+  {"id":"IU125","jp":"とうきょう","kr":"도쿄"},
+  {"id":"IU126","jp":"ふゆ","kr":"겨울"},
+  {"id":"IU127","jp":"おとうと","kr":"남동생"},
+  {"id":"IU128","jp":"からい","kr":"맵다"},
+  {"id":"IU129","jp":"みず","kr":"물"},
+  {"id":"IU130","jp":"ない","kr":"~않다"},
+  {"id":"IU131","jp":"ないです","kr":"~않습니다"},
+  {"id":"IU132","jp":"ごちそうさま","kr":"잘 먹었습니다(식후 인사)"},
+  {"id":"IU133","jp":"でした","kr":"~였습니다"},
+  {"id":"IU134","jp":"なに","kr":"뭐야? / 무엇"},
+  {"id":"IU135","jp":"いいえ","kr":"아니요"},
+  {"id":"IU136","jp":"ほっかいどう","kr":"홋카이도"}
+];
+
+// Google Apps Script 웹앱 엔드포인트 URL
+const GAS_ENDPOINT_URL = 'https://script.google.com/macros/s/AKfycbyVv8hMnp55ePPs2llWKFTPADPAFnVK3g-tYbcVV29apig8Y1czqyIfJ-msW23b9tPDdg/exec';
+
+// State
+let currentClass = '2학년 1반';
+let roundMemo = '';
+let prepTime = 5;
+let qTime = 10;
+let examQuestions = [];
+let examIndex = 0;
+let isPreparing = true;
+let isPaused = false;
+let secondsLeft = 5;
+let timerInterval = null;
+
+// DOM Helper
+const $ = id => document.getElementById(id);
+
+// Random logic
+function secureShuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function generateExamSet() {
+  const chosen = secureShuffle(UNITS).slice(0, 20);
+  return chosen.map((u, i) => {
+    const dir = i < 10 ? '일→한' : '한→일';
+    return {
+      number: i + 1,
+      direction: dir,
+      prompt: dir === '일→한' ? u.jp : u.kr,
+      answer: dir === '일→한' ? u.kr : u.jp,
+      id: u.id
+    };
+  });
+}
+
+// Chip Click
+document.querySelectorAll('#classChips .chip').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('#classChips .chip').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentClass = btn.dataset.class;
+    $('customClassInput').value = currentClass;
+  };
+});
+
+$('customClassInput').oninput = e => {
+  currentClass = e.target.value.trim() || '2학년 1반';
+};
+
+// Start Exam
+$('startExamBtn').onclick = () => {
+  currentClass = $('customClassInput').value.trim() || '2학년 1반';
+  roundMemo = $('roundMemoInput').value.trim();
+  prepTime = parseInt($('prepTimeSelect').value, 10);
+  qTime = parseInt($('qTimeSelect').value, 10);
+
+  examQuestions = generateExamSet();
+  examIndex = 0;
+  isPreparing = true;
+  isPaused = false;
+  secondsLeft = prepTime;
+
+  $('stageClassBadge').textContent = currentClass;
+  $('stageView').style.display = 'flex';
+  $('resultView').style.display = 'none';
+  $('pauseBtn').textContent = '일시정지 (Space)';
+
+  renderStage();
+  startTimer();
+};
+
+function renderStage() {
+  const timerBadge = $('stageTimerBadge');
+  const bar = $('timeProgressBar');
+
+  timerBadge.textContent = secondsLeft;
+  timerBadge.classList.toggle('urgent', !isPreparing && secondsLeft <= 3);
+
+  const totalSec = isPreparing ? prepTime : qTime;
+  bar.style.width = `${Math.max(0, (secondsLeft / totalSec) * 100)}%`;
+
+  if (isPreparing) {
+    $('stageDirBadge').textContent = '준비';
+    $('stageCounterBadge').textContent = '준비';
+    $('stageQNum').textContent = '생활일본어 수행평가 · 준비';
+    $('stagePrompt').textContent = '준비';
+    $('stagePrompt').className = 'stage-prompt';
+    $('stageHelp').innerHTML = `답안지를 준비하세요.<br><b>${secondsLeft}초</b> 뒤 1번 문항이 자동으로 시작됩니다.`;
+    return;
+  }
+
+  const q = examQuestions[examIndex];
+  $('stageDirBadge').textContent = q.direction;
+  $('stageCounterBadge').textContent = `${q.number} / 20`;
+  $('stageQNum').textContent = `제 ${q.number} 번 (${q.direction})`;
+  $('stagePrompt').textContent = q.prompt;
+  $('stagePrompt').className = `stage-prompt ${q.direction === '일→한' ? 'jp' : 'kr'}`;
+  $('stageHelp').textContent = q.direction === '일→한' ? '뜻을 한국어로 답안지에 쓰세요.' : '한국어 뜻에 맞는 일본어를 답안지에 쓰세요.';
+}
+
+function startTimer() {
+  stopTimer();
+  timerInterval = setInterval(() => {
+    if (isPaused) return;
+    secondsLeft--;
+    if (secondsLeft <= 0) {
+      if (isPreparing) {
+        isPreparing = false;
+        secondsLeft = qTime;
+        renderStage();
+      } else {
+        nextQuestion();
+      }
+    } else {
+      renderStage();
+    }
+  }, 1000);
+}
+
+function stopTimer() {
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+}
+
+function nextQuestion() {
+  if (isPreparing) return;
+  if (examIndex < 19) {
+    examIndex++;
+    secondsLeft = qTime;
+    renderStage();
+  } else {
+    finishExam();
+  }
+}
+
+function prevQuestion() {
+  if (isPreparing || examIndex <= 0) return;
+  examIndex--;
+  secondsLeft = qTime;
+  renderStage();
+}
+
+function finishExam() {
+  stopTimer();
+  $('stageView').style.display = 'none';
+  $('resultView').style.display = 'block';
+  renderResult();
+
+  // 시험 완료 시 자동으로 구글 드라이브 저장 시도
+  autoSaveToDrive();
+}
+
+// Stage Controls
+$('nextBtn').onclick = nextQuestion;
+$('prevBtn').onclick = prevQuestion;
+$('pauseBtn').onclick = () => {
+  if (isPreparing) return;
+  isPaused = !isPaused;
+  $('pauseBtn').textContent = isPaused ? '계속 진행 (Space)' : '일시정지 (Space)';
+};
+$('abortBtn').onclick = () => {
+  if (confirm('시험을 중단하시겠습니까?')) {
+    stopTimer();
+    $('stageView').style.display = 'none';
+  }
+};
+
+document.addEventListener('keydown', e => {
+  if ($('stageView').style.display !== 'flex') return;
+  if (e.code === 'Space') {
+    e.preventDefault();
+    $('pauseBtn').click();
+  } else if (e.key === 'ArrowRight') {
+    nextQuestion();
+  } else if (e.key === 'ArrowLeft') {
+    prevQuestion();
+  }
+});
+
+// Render Result
+function renderResult() {
+  const now = new Date();
+  const dateStr = now.getFullYear() + '-' +
+    String(now.getMonth() + 1).padStart(2, '0') + '-' +
+    String(now.getDate()).padStart(2, '0') + ' ' +
+    String(now.getHours()).padStart(2, '0') + ':' +
+    String(now.getMinutes()).padStart(2, '0');
+
+  $('resDate').textContent = dateStr;
+  $('resClassBadge').textContent = currentClass + (roundMemo ? ` (${roundMemo})` : '');
+
+  const tbody = $('answerTbody');
+  tbody.innerHTML = examQuestions.map(q => `
+    <tr>
+      <td class="num">${q.number}</td>
+      <td class="dir">${q.direction}</td>
+      <td class="q ${q.direction === '일→한' ? 'jp' : ''}">${escapeHtml(q.prompt)}</td>
+      <td class="a ${q.direction === '한→일' ? 'jp' : ''}">${escapeHtml(q.answer)}</td>
+    </tr>
+  `).join('');
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+}
+
+// Auto Save to Google Drive via GAS Web App
+async function autoSaveToDrive() {
+  const btn = $('saveDriveBtn');
+  btn.disabled = true;
+  btn.textContent = '☁️ 구글 드라이브 저장 중...';
+
+  try {
+    const payload = {
+      className: currentClass,
+      roundName: roundMemo,
+      questions: examQuestions,
+      timestamp: new Date().toISOString()
+    };
+
+    const res = await fetch(GAS_ENDPOINT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      btn.textContent = '✅ 구글 드라이브 저장 완료';
+      $('driveAlert').style.display = 'block';
+      $('driveFileLink').href = data.fileUrl;
+    } else {
+      throw new Error(data.error || '저장 실패');
+    }
+  } catch (err) {
+    console.error('Drive save error:', err);
+    btn.disabled = false;
+    btn.textContent = '⚠️ 드라이브 재시도 (클릭)';
+    alert('구글 드라이브 자동 저장 중 일시적인 오류가 발생했습니다. 하단의 [PC에 파일 다운로드]로 백업해 두시거나 [구글 드라이브에 저장] 버튼을 다시 눌러주세요.');
+  }
+}
+
+$('saveDriveBtn').onclick = autoSaveToDrive;
+
+// Download HTML file
+$('downloadHtmlBtn').onclick = () => {
+  const htmlContent = document.documentElement.outerHTML;
+  const now = new Date();
+  const dateStr = now.getFullYear() +
+    String(now.getMonth() + 1).padStart(2, '0') +
+    String(now.getDate()).padStart(2, '0') + '_' +
+    String(now.getHours()).padStart(2, '0') +
+    String(now.getMinutes()).padStart(2, '0');
+
+  const fileName = `[${currentClass}]_생활일본어_정답표_${dateStr}.html`;
+  const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+};
+
+// Print
+$('printResultBtn').onclick = () => window.print();
+
+// New Exam
+$('newExamBtn').onclick = () => {
+  $('resultView').style.display = 'none';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+</script>
+</body>
+</html>

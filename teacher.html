@@ -209,15 +209,16 @@ p.desc { color: var(--muted); margin: 0 0 20px; font-size: 15px; line-height: 1.
         <div class="field-group">
           <label class="field-label">학급 선택 (또는 직접 입력)</label>
           <div class="chip-group" id="classChips">
-            <button type="button" class="chip active" data-class="2학년 1반">2-1</button>
-            <button type="button" class="chip" data-class="2학년 2반">2-2</button>
+            <button type="button" class="chip active" data-class="2학년 2반">2-2</button>
             <button type="button" class="chip" data-class="2학년 3반">2-3</button>
             <button type="button" class="chip" data-class="2학년 4반">2-4</button>
             <button type="button" class="chip" data-class="2학년 5반">2-5</button>
             <button type="button" class="chip" data-class="2학년 6반">2-6</button>
             <button type="button" class="chip" data-class="2학년 7반">2-7</button>
+            <button type="button" class="chip" data-class="2학년 8반">2-8</button>
+            <button type="button" class="chip" data-class="2학년 9반">2-9</button>
           </div>
-          <input type="text" id="customClassInput" class="text-input" value="2학년 1반" placeholder="예: 2학년 3반 (2차시)">
+          <input type="text" id="customClassInput" class="text-input" value="2학년 2반" placeholder="예: 2학년 3반 (2차시)">
         </div>
 
         <div class="field-group">
@@ -489,7 +490,7 @@ const UNITS = [
 const GAS_ENDPOINT_URL = 'https://script.google.com/macros/s/AKfycbyVv8hMnp55ePPs2llWKFTPADPAFnVK3g-tYbcVV29apig8Y1czqyIfJ-msW23b9tPDdg/exec';
 
 // State
-let currentClass = '2학년 1반';
+let currentClass = '2학년 2반';
 let roundMemo = '';
 let prepTime = 5;
 let qTime = 10;
@@ -538,12 +539,12 @@ document.querySelectorAll('#classChips .chip').forEach(btn => {
 });
 
 $('customClassInput').oninput = e => {
-  currentClass = e.target.value.trim() || '2학년 1반';
+  currentClass = e.target.value.trim() || '2학년 2반';
 };
 
 // Start Exam
 $('startExamBtn').onclick = () => {
-  currentClass = $('customClassInput').value.trim() || '2학년 1반';
+  currentClass = $('customClassInput').value.trim() || '2학년 2반';
   roundMemo = $('roundMemoInput').value.trim();
   prepTime = parseInt($('prepTimeSelect').value, 10);
   qTime = parseInt($('qTimeSelect').value, 10);
